@@ -2,4 +2,4 @@ num_epochs: 100
 batch_size: 32
 learning_rate: 0.001
 num_timesteps: 1000
-adam_epsilon: 1e-8
+adam_epsilon: .000001

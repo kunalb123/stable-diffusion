@@ -26,14 +26,14 @@ def run_eval(args, model, datasets, tokenizer, split='validation'):
 
 def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
     criterion = nn.MSELoss()
-    train_dataloader = get_dataloader(args, datasets['train'])
+    train_dataloader = get_dataloader(datasets, args["batch_size"])
     
-    optimizer = torch.optim.Adam(unet_model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.num_epochs)
-    noise_scheduler = DDPMScheduler(num_train_timesteps=args.num_timesteps)
+    optimizer = torch.optim.Adam(unet_model.parameters(), lr=args["learning_rate"], eps=args["adam_epsilon"])
+    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args["num_epochs"])
+    noise_scheduler = DDPMScheduler(num_train_timesteps=args["num_timesteps"])
 
 
-    for epoch_count in range(args.max_epochs):
+    for epoch_count in range(args["num_epochs"]):
         losses = 0
         unet_model.train()
         
@@ -79,3 +79,5 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
         # Commenting out running of evaluation of the 
         #run_eval(args, model, datasets, tokenizer, 'validation')
         print('epoch', epoch_count, '| losses:', losses)
+
+    return unet_model

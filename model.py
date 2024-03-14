@@ -31,7 +31,7 @@ class Diffusion(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.unet = UNet2DConditionModel().to(device)
+        self.unet = UNet2DConditionModel(cross_attention_dim=768).to(device)
 
     def forward(self, latent_image, latent_text, timestep):
         # add gaussian noise to image every forward pass

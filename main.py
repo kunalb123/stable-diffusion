@@ -18,7 +18,6 @@ else:
 vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float16).to(device)
 tokenizer = CLIPTextEmbedder()
 
-
 def main():
     with(open("config.yaml", "r")) as file:
         config = yaml.safe_load(file)
@@ -37,8 +36,15 @@ def main():
 
     print("Training the model...")
     unet_model = Diffusion().to(device)
-    baseline_train(config, vae, tokenizer, unet_model, dataset)
+    unet_model = baseline_train(config, vae, tokenizer, unet_model, dataset)
     
+    # Save the model
+    torch.save(unet_model.state_dict(), "model.pth")
+    print("Model trained")
+
+    # Inference
+    print("Inference...")
+    # dataloader = get_dataloader(dataset, batch_size, "validation")
 
 
 if __name__ == "__main__":
