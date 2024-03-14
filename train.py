@@ -1,5 +1,4 @@
-from diffusers import UNet2DConditionModel
-from diffusers.optimization import get_cosine_schedule_with_warmup
+from diffusers import UNet2DConditionModel, DDPMScheduler
 import torch
 from tqdm import tqdm as progress_bar
 from torch import nn
@@ -31,7 +30,7 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
     
     optimizer = torch.optim.Adam(unet_model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epochs)
-    noise_scheduler = # add in the noise schehduler
+    noise_scheduler = DDPMScheduler(num_train_timesteps=args.num_timesteps)
 
 
     for epoch_count in range(args.max_epochs):
@@ -61,20 +60,23 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
                 dtype=torch.int64
             )
 
+            noise = torch.randn(clean_img_latents.shape, device=clean_img_latents.device)
+
             # Add noise to the clean images according to the noise magnitude at each timestep
             # (this is the forward diffusion process)
-            noisy_img_latents = noise_scheduler.add_noise(clean_images, noise, timesteps)
+            noisy_img_latents = noise_scheduler.add_noise(clean_img_latents, noise, timesteps)
 
-            logits = unet_model(img_latents,text_embeddings,timestep)
-            loss = criterion(logits, labels)
+            noise_pred = unet_model(noisy_img_latents,text_embeddings,timesteps)
+            loss = criterion(noise_pred,noise)
             loss.backward()
 
             optimizer.step()
             lr_scheduler.step()
             
             losses += loss.item()
-    
-        run_eval(args, model, datasets, tokenizer, 'validation')
+
+        # Commenting out running of evaluation of the 
+        #run_eval(args, model, datasets, tokenizer, 'validation')
         print('epoch', epoch_count, '| losses:', losses)
 
 if __name__ == '__main__':
