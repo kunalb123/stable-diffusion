@@ -24,9 +24,9 @@ def run_eval(args, model, datasets, tokenizer, split='validation'):
 #     print(f'{split} acc:', acc/len(datasets[split]), f'|dataset split {split} size:', len(datasets[split]))
 
 
-def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
+def baseline_train(args, vae, clip_tokenizer, unet_model, datasets, device):
     criterion = nn.MSELoss()
-    train_dataloader = get_dataloader(datasets, args["batch_size"])
+    train_dataloader = get_dataloader(datasets['train'], args["batch_size"])
     
     optimizer = torch.optim.Adam(unet_model.parameters(), lr=args["learning_rate"], eps=args["adam_epsilon"])
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args["num_epochs"])
@@ -45,6 +45,7 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
 
             #images, texts = prepare_inputs(batch)
             texts, images = batch
+            images = images.to(device)
 
             batch_size = images.shape[0]
             # Gradients do not flow into the autoencoder or the transformer
@@ -54,20 +55,20 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
                 # Convert texts to embeddings (batch_size x n_sequence x n_embed)
                 text_embeddings = clip_tokenizer(texts)
                 # Convert image into latent images
-                clean_img_latents = vae.encode(images)
+                clean_img_latents = vae.encode(images).latent_dist.sample()
             
             timesteps = torch.randint(
-                0, noise_scheduler.config.num_train_timesteps, (batch_size,), device=clean_img_latents.device,
+                0, noise_scheduler.config.num_train_timesteps, (batch_size,), device=device,
                 dtype=torch.int64
             )
 
-            noise = torch.randn(clean_img_latents.shape, device=clean_img_latents.device)
+            noise = torch.randn(clean_img_latents.shape, device=device)
 
             # Add noise to the clean images according to the noise magnitude at each timestep
             # (this is the forward diffusion process)
             noisy_img_latents = noise_scheduler.add_noise(clean_img_latents, noise, timesteps)
 
-            noise_pred = unet_model(noisy_img_latents,text_embeddings,timesteps)
+            noise_pred = unet_model(noisy_img_latents.to(device='cuda:0'),text_embeddings.to(device='cuda:0'),timesteps.to(device='cuda:0'))
             loss = criterion(noise_pred,noise)
             loss.backward()
 

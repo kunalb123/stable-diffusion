@@ -15,7 +15,7 @@ elif(torch.cuda.is_available()):
 else:
     device = "cpu"
 
-vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float16).to(device)
+vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float).to(device)
 tokenizer = CLIPTextEmbedder()
 
 def main():
@@ -36,7 +36,7 @@ def main():
 
     print("Training the model...")
     unet_model = Diffusion().to(device)
-    unet_model = baseline_train(config, vae, tokenizer, unet_model, dataset)
+    unet_model = baseline_train(config, vae, tokenizer, unet_model, dataset, device)
     
     # Save the model
     torch.save(unet_model.state_dict(), "model.pth")
