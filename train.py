@@ -38,7 +38,8 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
             # Need to get images of size (batch_size x n_channels x height x width)
             # Need to get texts of size (batch_size x n_sequence)
 
-            images, texts = prepare_inputs(batch)
+            #images, texts = prepare_inputs(batch)
+            texts, images = batch
 
             batch_size = images.shape[0]
             # Gradients do not flow into the autoencoder or the transformer
