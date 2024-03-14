@@ -4,11 +4,6 @@ from tqdm import tqdm as progress_bar
 from torch import nn
 from dataloader import get_dataloader
 
-def add_gaussian_noise(images, mean=0.0, std=0.1):
-    """Adds Gaussian noise to a tensor of images."""
-    noise = torch.randn_like(images) * std + mean
-    return images + noise
-
 def run_eval(args, model, datasets, tokenizer, split='validation'):
     model.eval()
     dataloader = get_dataloader(args, datasets[split], split)
@@ -79,5 +74,3 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
         #run_eval(args, model, datasets, tokenizer, 'validation')
         print('epoch', epoch_count, '| losses:', losses)
 
-if __name__ == '__main__':
-    baseline_train(None, None, None, None)
