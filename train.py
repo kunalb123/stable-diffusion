@@ -2,7 +2,7 @@ from diffusers import UNet2DConditionModel, DDPMScheduler
 import torch
 from tqdm import tqdm as progress_bar
 from torch import nn
-
+from dataloader import get_dataloader
 
 def add_gaussian_noise(images, mean=0.0, std=0.1):
     """Adds Gaussian noise to a tensor of images."""
