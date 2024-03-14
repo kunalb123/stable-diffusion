@@ -39,24 +39,39 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
         unet_model.train()
         
         for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
-
+            
+            optimizer.zero_grad()
             # Need to get images of size (batch_size x n_channels x height x width)
             # Need to get texts of size (batch_size x n_sequence)
 
-            inputs, texts = prepare_inputs(batch) 
-            
-            # Convert texts to embeddings (batch_size x n_sequence x n_embed)
-            
+            images, texts = prepare_inputs(batch)
 
-            # Convert image into latent images
+            batch_size = images.shape[0]
+            # Gradients do not flow into the autoencoder or the transformer
+            # Option 1 (below) / Option 2: Mafe requires grad of all the parameters of VAE and tokenizer as False (not implemented) 
+            with torch.no_grad(): 
 
-            logits = model(inputs, labels)
+                # Convert texts to embeddings (batch_size x n_sequence x n_embed)
+                text_embeddings = clip_tokenizer(texts)
+                # Convert image into latent images
+                clean_img_latents = vae.encode(images)
+            
+            timesteps = torch.randint(
+                0, noise_scheduler.config.num_train_timesteps, (batch_size,), device=clean_img_latents.device,
+                dtype=torch.int64
+            )
+
+            # Add noise to the clean images according to the noise magnitude at each timestep
+            # (this is the forward diffusion process)
+            noisy_img_latents = noise_scheduler.add_noise(clean_images, noise, timesteps)
+
+            logits = unet_model(img_latents,text_embeddings,timestep)
             loss = criterion(logits, labels)
             loss.backward()
 
-            model.optimizer.step()
-            model.scheduler.step()
-            model.zero_grad()
+            optimizer.step()
+            lr_scheduler.step()
+            
             losses += loss.item()
     
         run_eval(args, model, datasets, tokenizer, 'validation')
