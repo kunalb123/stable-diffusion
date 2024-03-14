@@ -5,6 +5,20 @@ from torch import nn
 
 NUM_EPOCHS = 10
 
+def run_eval(args, model, datasets, tokenizer, split='validation'):
+    model.eval()
+    dataloader = get_dataloader(args, datasets[split], split)
+
+    acc = 0
+    for step, batch in progress_bar(enumerate(dataloader), total=len(dataloader)):
+        inputs, labels = prepare_inputs(batch, model)
+        logits = model(inputs, labels)
+        
+        tem = (logits.argmax(1) == labels).float().sum()
+        acc += tem.item()
+  
+    print(f'{split} acc:', acc/len(datasets[split]), f'|dataset split {split} size:', len(datasets[split]))
+
 
 
 def baseline_train(args, model, datasets, tokenizer):
