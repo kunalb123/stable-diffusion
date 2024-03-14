@@ -38,14 +38,12 @@ def baseline_train(args, model, datasets, tokenizer):
     for epoch_count in range(NUM_EPOCHS):
         losses = 0
         model.train()
-
-        curr_std = initial_std + epoch_count * std_increase     # increase the noise every epoch
         
         for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
             inputs, labels = prepare_inputs(batch, model)
             
             # Adding noise to inputs: assuming theese are images
-            inputs = add_gaussian_noise(inputs, std=curr_std)
+            inputs = add_gaussian_noise(inputs, std=initial_std + step*std_increase)
 
             logits = model(inputs, labels)
             loss = criterion(logits, labels)
