@@ -1,9 +1,9 @@
 from diffusers import UNet2DConditionModel
+from diffusers.optimization import get_cosine_schedule_with_warmup
 import torch
 from tqdm import tqdm as progress_bar
 from torch import nn
 
-NUM_EPOCHS = 10
 
 def add_gaussian_noise(images, mean=0.0, std=0.1):
     """Adds Gaussian noise to a tensor of images."""
@@ -25,25 +25,30 @@ def run_eval(args, model, datasets, tokenizer, split='validation'):
     print(f'{split} acc:', acc/len(datasets[split]), f'|dataset split {split} size:', len(datasets[split]))
 
 
-def baseline_train(args, model, datasets, tokenizer):
+def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
     criterion = nn.CrossEntropyLoss()
     train_dataloader = get_dataloader(args, datasets['train'])
     
-    model.optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
-    model.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, T_max=10)
+    optimizer = torch.optim.Adam(unet_model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
+    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epochs)
+    noise_scheduler = # add in the noise schehduler
 
-    initial_std = 0.1
-    std_increase = 0.001
 
-    for epoch_count in range(NUM_EPOCHS):
+    for epoch_count in range(args.max_epochs):
         losses = 0
-        model.train()
+        unet_model.train()
         
         for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
-            inputs, labels = prepare_inputs(batch, model)
+
+            # Need to get images of size (batch_size x n_channels x height x width)
+            # Need to get texts of size (batch_size x n_sequence)
+
+            inputs, texts = prepare_inputs(batch) 
             
-            # Adding noise to inputs: assuming theese are images
-            inputs = add_gaussian_noise(inputs, std=initial_std + step*std_increase)
+            # Convert texts to embeddings (batch_size x n_sequence x n_embed)
+            
+
+            # Convert image into latent images
 
             logits = model(inputs, labels)
             loss = criterion(logits, labels)
