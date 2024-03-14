@@ -25,7 +25,7 @@ def run_eval(args, model, datasets, tokenizer, split='validation'):
 
 
 def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.MSELoss()
     train_dataloader = get_dataloader(args, datasets['train'])
     
     optimizer = torch.optim.Adam(unet_model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
@@ -47,7 +47,7 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
 
             batch_size = images.shape[0]
             # Gradients do not flow into the autoencoder or the transformer
-            # Option 1 (below) / Option 2: Mafe requires grad of all the parameters of VAE and tokenizer as False (not implemented) 
+            # Option 1 (below) / Option 2: Make requires grad of all the parameters of VAE and tokenizer as False (not implemented) 
             with torch.no_grad(): 
 
                 # Convert texts to embeddings (batch_size x n_sequence x n_embed)
