@@ -53,22 +53,22 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets, device):
             with torch.no_grad(): 
 
                 # Convert texts to embeddings (batch_size x n_sequence x n_embed)
-                text_embeddings = clip_tokenizer(texts)
+                text_embeddings = clip_tokenizer(texts).to(device)
                 # Convert image into latent images
                 clean_img_latents = vae.encode(images).latent_dist.sample()
             
             timesteps = torch.randint(
                 0, noise_scheduler.config.num_train_timesteps, (batch_size,), device=device,
                 dtype=torch.int64
-            )
+            ).to(device)
 
             noise = torch.randn(clean_img_latents.shape, device=device)
 
             # Add noise to the clean images according to the noise magnitude at each timestep
             # (this is the forward diffusion process)
-            noisy_img_latents = noise_scheduler.add_noise(clean_img_latents, noise, timesteps)
+            noisy_img_latents = noise_scheduler.add_noise(clean_img_latents, noise, timesteps).to(device=device)
 
-            noise_pred = unet_model(noisy_img_latents.to(device='cuda:0'),text_embeddings.to(device='cuda:0'),timesteps.to(device='cuda:0'))
+            noise_pred = unet_model(noisy_img_latents,text_embeddings,timesteps)
             loss = criterion(noise_pred,noise)
             loss.backward()
 
