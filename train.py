@@ -5,6 +5,11 @@ from torch import nn
 
 NUM_EPOCHS = 10
 
+def add_gaussian_noise(images, mean=0.0, std=0.1):
+    """Adds Gaussian noise to a tensor of images."""
+    noise = torch.randn_like(images) * std + mean
+    return images + noise
+
 def run_eval(args, model, datasets, tokenizer, split='validation'):
     model.eval()
     dataloader = get_dataloader(args, datasets[split], split)
@@ -20,37 +25,39 @@ def run_eval(args, model, datasets, tokenizer, split='validation'):
     print(f'{split} acc:', acc/len(datasets[split]), f'|dataset split {split} size:', len(datasets[split]))
 
 
-
 def baseline_train(args, model, datasets, tokenizer):
-    criterion = nn.CrossEntropyLoss()  # combines LogSoftmax() and NLLLoss()
-    # setup train dataloader
+    criterion = nn.CrossEntropyLoss()
     train_dataloader = get_dataloader(args, datasets['train'])
     
-    # task2: setup model's optimizer_scheduler if you have
-    # model.optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
-    model.optimizer = custom_optimizer(model, base_lr=args.learning_rate, decay_rate=0.95)
-    model.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, 10)
-    # model.scheduler = torch.optim.lr_scheduler.StepLR(model.optimizer, step_size=1, gamma=0.1)
-    
-    # task3: write a training loop
+    model.optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
+    model.scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(model.optimizer, T_max=10)
+
+    initial_std = 0.1
+    std_increase = 0.001
+
     for epoch_count in range(NUM_EPOCHS):
         losses = 0
         model.train()
+
+        curr_std = initial_std + epoch_count * std_increase     # increase the noise every epoch
         
         for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
             inputs, labels = prepare_inputs(batch, model)
+            
+            # Adding noise to inputs: assuming theese are images
+            inputs = add_gaussian_noise(inputs, std=curr_std)
+
             logits = model(inputs, labels)
             loss = criterion(logits, labels)
             loss.backward()
 
-            model.optimizer.step()  # backprop to update the weights
-            model.scheduler.step()  # Update learning rate schedule
+            model.optimizer.step()
+            model.scheduler.step()
             model.zero_grad()
             losses += loss.item()
     
-        run_eval(args, model, datasets, tokenizer, split='validation')
+        run_eval(args, model, datasets, tokenizer, 'validation')
         print('epoch', epoch_count, '| losses:', losses)
-  
 
 if __name__ == '__main__':
     baseline_train(None, None, None, None)
