@@ -35,12 +35,20 @@ class Diffusion(nn.Module):
 
     def forward(self, latent_image, latent_text, timestep):
         # add gaussian noise to image every forward pass
-        return self.unet(latent_image, latent_text, timestep)
+        return self.unet(sample=latent_image, encoder_hidden_states=latent_text, timestep=timestep)
     
+
+# Example usage
 
 # image = Image.open("image.png").convert("RGB").resize((256, 256))
 # image = tfms.ToTensor()(image).unsqueeze(0) * 2.0 - 1.0
-# image = image.to(device, dtype=torch.float16)
+# image = image.to(device, dtype=torch.float)
+# vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float).to(device)
+# tokenizer = CLIPTextEmbedder()
+# text = ["sattelite image of a city"]
+# latent_image = vae.encode(image).latent_dist.sample()
+# latent_text = tokenizer(text).to(device)
+# timestep = torch.tensor(40, dtype=torch.int, device=device)
 # diffuser = Diffusion()
-# result = diffuser.forward(image, torch.tensor(40, dtype=torch.float16, device=device), ["sattelite image of a city"])
+# result = diffuser.forward(latent_image, latent_text, timestep)
 # print(result)
