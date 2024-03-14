@@ -11,6 +11,7 @@ elif(torch.cuda.is_available()):
     device = torch.device("cuda:0")
 else:
     device = "cpu"
+    
 class CLIPTextEmbedder(nn.Module):
 
     def __init__(self, version: str = "openai/clip-vit-large-patch14", device="cuda:0", max_length: int = 77):
@@ -30,17 +31,11 @@ class Diffusion(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float16).to(device)
         self.unet = UNet2DConditionModel().to(device)
         self.tokenizer = CLIPTextEmbedder()
 
-    def forward(self, image, text, timestep):
+    def forward(self, latent_image, latent_text, timestep):
         # add gaussian noise to image every forward pass
-        gaussian_noise = torch.randn_like(image)
-        noisy_image = image + gaussian_noise
-
-        latent_image = self.vae.encode(noisy_image)
-        latent_text = self.tokenizer(text)
         return self.unet(latent_image, latent_text, timestep)
     
 
