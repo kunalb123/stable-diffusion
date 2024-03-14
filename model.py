@@ -26,7 +26,11 @@ class Diffusion(nn.Module):
         self.tokenizer = CLIPTextEmbedder()
 
     def forward(self, image, text, timestep):
-        latent_image = self.vae.encode(image)
+        # add gaussian noise to image every forward pass
+        gaussian_noise = torch.randn_like(image)
+        noisy_image = image + gaussian_noise
+
+        latent_image = self.vae.encode(noisy_image)
         latent_text = self.tokenizer(text)
         return self.unet(latent_image, latent_text, timestep)
     
