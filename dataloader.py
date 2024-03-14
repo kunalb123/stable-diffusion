@@ -8,9 +8,6 @@ from torchvision.transforms import transforms
 from PIL import Image
 import os
 
-# Load the dataset with the `large_random_1k` subset
-dataset = load_dataset('poloclub/diffusiondb', 'large_random_1k')
-
 # Custom class to apply transforms (PIL to tensor etc)
 class TextImageDataset(Dataset):
     def __init__(self, dataset, transform=None):

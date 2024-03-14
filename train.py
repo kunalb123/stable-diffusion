@@ -4,19 +4,24 @@ from tqdm import tqdm as progress_bar
 from torch import nn
 from dataloader import get_dataloader
 
+def add_gaussian_noise(images, mean=0.0, std=0.1):
+    """Adds Gaussian noise to a tensor of images."""
+    noise = torch.randn_like(images) * std + mean
+    return images + noise
+
 def run_eval(args, model, datasets, tokenizer, split='validation'):
     model.eval()
     dataloader = get_dataloader(args, datasets[split], split)
 
-    acc = 0
-    for step, batch in progress_bar(enumerate(dataloader), total=len(dataloader)):
-        inputs, labels = prepare_inputs(batch, model)
-        logits = model(inputs, labels)
+#     acc = 0
+#     for step, batch in progress_bar(enumerate(dataloader), total=len(dataloader)):
+#         inputs, labels = prepare_inputs(batch, model)
+#         logits = model(inputs, labels)
         
-        tem = (logits.argmax(1) == labels).float().sum()
-        acc += tem.item()
+#         tem = (logits.argmax(1) == labels).float().sum()
+#         acc += tem.item()
   
-    print(f'{split} acc:', acc/len(datasets[split]), f'|dataset split {split} size:', len(datasets[split]))
+#     print(f'{split} acc:', acc/len(datasets[split]), f'|dataset split {split} size:', len(datasets[split]))
 
 
 def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
@@ -24,7 +29,7 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
     train_dataloader = get_dataloader(args, datasets['train'])
     
     optimizer = torch.optim.Adam(unet_model.parameters(), lr=args.learning_rate, eps=args.adam_epsilon)
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.max_epochs)
+    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.num_epochs)
     noise_scheduler = DDPMScheduler(num_train_timesteps=args.num_timesteps)
 
 
@@ -73,4 +78,3 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets):
         # Commenting out running of evaluation of the 
         #run_eval(args, model, datasets, tokenizer, 'validation')
         print('epoch', epoch_count, '| losses:', losses)
-

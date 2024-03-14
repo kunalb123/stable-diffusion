@@ -32,16 +32,15 @@ class Diffusion(nn.Module):
     def __init__(self):
         super().__init__()
         self.unet = UNet2DConditionModel().to(device)
-        self.tokenizer = CLIPTextEmbedder()
 
     def forward(self, latent_image, latent_text, timestep):
         # add gaussian noise to image every forward pass
         return self.unet(latent_image, latent_text, timestep)
     
 
-image = Image.open("image.png").convert("RGB").resize((256, 256))
-image = tfms.ToTensor()(image).unsqueeze(0) * 2.0 - 1.0
-image = image.to(device, dtype=torch.float16)
-diffuser = Diffusion()
-result = diffuser.forward(image, torch.tensor(40, dtype=torch.float16, device=device), ["sattelite image of a city"])
-print(result)
+# image = Image.open("image.png").convert("RGB").resize((256, 256))
+# image = tfms.ToTensor()(image).unsqueeze(0) * 2.0 - 1.0
+# image = image.to(device, dtype=torch.float16)
+# diffuser = Diffusion()
+# result = diffuser.forward(image, torch.tensor(40, dtype=torch.float16, device=device), ["sattelite image of a city"])
+# print(result)
