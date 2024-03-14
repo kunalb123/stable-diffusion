@@ -15,6 +15,7 @@ elif(torch.cuda.is_available()):
 else:
     device = "cpu"
 
+
 vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float).to(device)
 tokenizer = CLIPTextEmbedder()
 

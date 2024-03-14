@@ -14,7 +14,7 @@ else:
     
 class CLIPTextEmbedder(nn.Module):
 
-    def __init__(self, version: str = "openai/clip-vit-large-patch14", device=device, max_length: int = 77):
+    def __init__(self, version: str = "openai/clip-vit-base-patch32", device=device, max_length: int = 77):
         super().__init__()
         self.tokenizer = CLIPTokenizer.from_pretrained(version, torch_dtype=torch.float)
         self.transformer = CLIPTextModel.from_pretrained(version, torch_dtype=torch.float).to(device)

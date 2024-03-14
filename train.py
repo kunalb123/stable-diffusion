@@ -3,6 +3,7 @@ import torch
 from tqdm import tqdm as progress_bar
 from torch import nn
 from dataloader import get_dataloader
+from torch.cuda.amp import GradScaler, autocast
 
 def add_gaussian_noise(images, mean=0.0, std=0.1):
     """Adds Gaussian noise to a tensor of images."""
@@ -32,7 +33,7 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets, device):
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args["num_epochs"])
     noise_scheduler = DDPMScheduler(num_train_timesteps=args["num_timesteps"])
 
-
+    scaler = GradScaler()
     for epoch_count in range(args["num_epochs"]):
         losses = 0
         unet_model.train()
@@ -67,15 +68,17 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets, device):
             # Add noise to the clean images according to the noise magnitude at each timestep
             # (this is the forward diffusion process)
             noisy_img_latents = noise_scheduler.add_noise(clean_img_latents, noise, timesteps).to(device=device)
-
-            noise_pred = unet_model(noisy_img_latents, text_embeddings, timesteps)
-            loss = criterion(noise_pred.sample, noise)
-            loss.backward()
-
-            optimizer.step()
+            with autocast():
+                noise_pred = unet_model(noisy_img_latents, text_embeddings, timesteps)
+                loss = criterion(noise_pred.sample, noise)
+            scaler.scale(loss).backward()
+            # print(torch.cuda.memory_summary(device=None, abbreviated=False))
+            scaler.step(optimizer)
+            scaler.update()
             lr_scheduler.step()
             
             losses += loss.item()
+            
 
         # Commenting out running of evaluation of the 
         #run_eval(args, model, datasets, tokenizer, 'validation')
