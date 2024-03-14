@@ -2,6 +2,8 @@ from diffusers import UNet2DConditionModel, AutoencoderKL
 from transformers import CLIPTokenizer, CLIPTextModel
 import torch
 import torch.nn as nn
+from PIL import Image
+from torchvision import transforms as tfms  
 
 class CLIPTextEmbedder(nn.Module):
 
@@ -20,9 +22,10 @@ class CLIPTextEmbedder(nn.Module):
 
 class Diffusion(nn.Module):
 
-    def __init__(self, config):
-        self.vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float16)
-        self.unet = UNet2DConditionModel()
+    def __init__(self):
+        super().__init__()
+        self.vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float16).to("cuda:0")
+        self.unet = UNet2DConditionModel().to("cuda:0")
         self.tokenizer = CLIPTextEmbedder()
 
     def forward(self, image, text, timestep):
@@ -35,6 +38,9 @@ class Diffusion(nn.Module):
         return self.unet(latent_image, latent_text, timestep)
     
 
-clip = CLIPTextEmbedder()
-prompt = ["a photo of a cat", "a photo of a dog"]
-print(clip(prompt).shape)
+image = Image.open("image.png").convert("RGB").resize((256, 256))
+image = tfms.ToTensor()(image).unsqueeze(0) * 2.0 - 1.0
+image = image.to("cuda:0", dtype=torch.float16)
+diffuser = Diffusion()
+result = diffuser.forward(image, torch.tensor(40, dtype=torch.float16, device="cuda:0"), ["sattelite image of a city"])
+print(result)
