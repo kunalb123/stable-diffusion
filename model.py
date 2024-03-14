@@ -5,6 +5,12 @@ import torch.nn as nn
 from PIL import Image
 from torchvision import transforms as tfms  
 
+if(torch.backends.mps.is_available()):
+    device = torch.device("mps")
+elif(torch.cuda.is_available()):
+    device = torch.device("cuda:0")
+else:
+    device = "cpu"
 class CLIPTextEmbedder(nn.Module):
 
     def __init__(self, version: str = "openai/clip-vit-large-patch14", device="cuda:0", max_length: int = 77):
@@ -24,8 +30,8 @@ class Diffusion(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float16).to("cuda:0")
-        self.unet = UNet2DConditionModel().to("cuda:0")
+        self.vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float16).to(device)
+        self.unet = UNet2DConditionModel().to(device)
         self.tokenizer = CLIPTextEmbedder()
 
     def forward(self, image, text, timestep):
@@ -40,7 +46,7 @@ class Diffusion(nn.Module):
 
 image = Image.open("image.png").convert("RGB").resize((256, 256))
 image = tfms.ToTensor()(image).unsqueeze(0) * 2.0 - 1.0
-image = image.to("cuda:0", dtype=torch.float16)
+image = image.to(device, dtype=torch.float16)
 diffuser = Diffusion()
-result = diffuser.forward(image, torch.tensor(40, dtype=torch.float16, device="cuda:0"), ["sattelite image of a city"])
+result = diffuser.forward(image, torch.tensor(40, dtype=torch.float16, device=device), ["sattelite image of a city"])
 print(result)
