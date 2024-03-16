@@ -8,9 +8,14 @@ from torchvision import transforms as tfms
 if(torch.backends.mps.is_available()):
     device = torch.device("mps")
 elif(torch.cuda.is_available()):
-    device = torch.device("cuda:0")
+    num_devices = torch.cuda.device_count()
+    if num_devices >= 8:
+        device = torch.device("cuda:6")  # Choose device index 6 (zero-based indexing)
+    else:
+        device = torch.device("cuda:0")  # Default to device index 0 if fewer than 8 devices are available
 else:
     device = "cpu"
+
     
 class CLIPTextEmbedder(nn.Module):
 

@@ -1,5 +1,6 @@
 num_epochs: 100
 batch_size: 32
 learning_rate: 0.001
-num_timesteps: 1000
+num_timesteps: 100
 adam_epsilon: .000001
+grad_acc_steps: 1

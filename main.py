@@ -1,3 +1,5 @@
+import os
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,14 +9,18 @@ from datasets import load_dataset
 from dataloader import get_dataloader
 from train import baseline_train
 from model import Diffusion, CLIPTextEmbedder
+import os
 
 if(torch.backends.mps.is_available()):
     device = torch.device("mps")
 elif(torch.cuda.is_available()):
-    device = torch.device("cuda:0")
+    num_devices = torch.cuda.device_count()
+    if num_devices >= 8:
+        device = torch.device("cuda:6")  # Choose device index 6 (zero-based indexing)
+    else:
+        device = torch.device("cuda:0")  # Default to device index 0 if fewer than 8 devices are available
 else:
     device = "cpu"
-
 
 vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float).to(device)
 tokenizer = CLIPTextEmbedder()

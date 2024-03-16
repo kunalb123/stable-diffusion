@@ -37,15 +37,16 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets, device):
     for epoch_count in range(args["num_epochs"]):
         losses = 0
         unet_model.train()
-        
+        #with memory_summary(device=device, abbreviated=True):
         for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
             
-            optimizer.zero_grad()
+            #optimizer.zero_grad()
             # Need to get images of size (batch_size x n_channels x height x width)
             # Need to get texts of size (batch_size x n_sequence)
 
             #images, texts = prepare_inputs(batch)
             texts, images = batch
+            #print(images.size())  # or images.shape
             images = images.to(device)
 
             batch_size = images.shape[0]
@@ -72,13 +73,14 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, datasets, device):
                 noise_pred = unet_model(noisy_img_latents, text_embeddings, timesteps)
                 loss = criterion(noise_pred.sample, noise)
             scaler.scale(loss).backward()
-            # print(torch.cuda.memory_summary(device=None, abbreviated=False))
-            scaler.step(optimizer)
-            scaler.update()
-            lr_scheduler.step()
+            if (step + 1) % args["grad_acc_steps"] == 0:
+                scaler.step(optimizer)
+                scaler.update()
+                optimizer.zero_grad()
+                print("Performing gradient accumulation")
             
             losses += loss.item()
-            
+        lr_scheduler.step()
 
         # Commenting out running of evaluation of the 
         #run_eval(args, model, datasets, tokenizer, 'validation')
