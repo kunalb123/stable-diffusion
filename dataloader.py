@@ -7,6 +7,7 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision.transforms import transforms
 from PIL import Image
 import os
+import torchvision.transforms.functional as TF
 
 # Custom class to apply transforms (PIL to tensor etc)
 class TextImageDataset(Dataset):
@@ -21,7 +22,7 @@ class TextImageDataset(Dataset):
         sample = self.dataset[idx]
         text = sample['prompt']
         image = sample['image']
-        
+        image = TF.to_tensor(image)
         # Apply transforms
         if self.transform:
             image = self.transform(image)
@@ -37,8 +38,8 @@ def collate_fn(batch):
 def get_dataloader(dataset, batch_size=32, shuffle=True):
 
     transform = transforms.Compose([
-        transforms.Resize((64, 64)),
-        transforms.ToTensor(),
+        transforms.Resize((256, 256)),
+        # transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
     ])
     custom_dataset = TextImageDataset(dataset, transform=transform)

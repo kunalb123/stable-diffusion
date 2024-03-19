@@ -8,14 +8,9 @@ from torchvision import transforms as tfms
 if(torch.backends.mps.is_available()):
     device = torch.device("mps")
 elif(torch.cuda.is_available()):
-    num_devices = torch.cuda.device_count()
-    if num_devices >= 8:
-        device = torch.device("cuda:6")  # Choose device index 6 (zero-based indexing)
-    else:
-        device = torch.device("cuda:0")  # Default to device index 0 if fewer than 8 devices are available
+    device = torch.device("cuda:0")
 else:
     device = "cpu"
-
     
 class CLIPTextEmbedder(nn.Module):
 
@@ -36,7 +31,11 @@ class Diffusion(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.unet = UNet2DConditionModel(cross_attention_dim=512).to(device)
+        self.unet = UNet2DConditionModel(cross_attention_dim=512,
+                                        #  in_channels=3,  # the number of input channels, 3 for RGB images
+                                        #  out_channels=3,  # the number of output channels
+                                        #  layers_per_block=2,  # how many ResNet layers to use per UNet block
+                                         block_out_channels=(128, 256, 512, 512)).to(device)
 
     def forward(self, latent_image, latent_text, timestep):
         # add gaussian noise to image every forward pass
