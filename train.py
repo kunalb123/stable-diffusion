@@ -80,6 +80,7 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, train_dataloader, devi
                 noise_pred = unet_model(images, texts, timesteps)
                 loss = criterion(noise_pred.sample, noise)
             scaler.scale(loss).backward()
+            # print(f'loss = {loss}')
             # print_memory_usage(f"After Backward {step}")
             # print(torch.cuda.memory_summary(device=None, abbreviated=False))
             scaler.step(optimizer)
