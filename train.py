@@ -38,7 +38,7 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, train_dataloader, devi
     
     optimizer = torch.optim.Adam(unet_model.parameters(), lr=args["learning_rate"], eps=args["adam_epsilon"])
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args["num_epochs"])
-    noise_scheduler = DDPMScheduler(num_train_timesteps=args["num_timesteps"])
+    noise_scheduler = DDPMScheduler(num_train_timesteps=args["num_timesteps"], beta_schedule='squaredcos_cap_v2')
 
     scaler = GradScaler()
     for epoch_count in range(args["num_epochs"]):
@@ -82,6 +82,7 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, train_dataloader, devi
             scaler.scale(loss).backward()
             # print_memory_usage(f"After Backward {step}")
             # print(torch.cuda.memory_summary(device=None, abbreviated=False))
+            nn.utils.clip_grad_norm_(unet_model.parameters(), max_norm=args["grad_clip_norm"])
             scaler.step(optimizer)
             scaler.update()
             lr_scheduler.step()

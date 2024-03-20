@@ -5,7 +5,7 @@ from diffusers import  AutoencoderKL
 import yaml
 from datasets import load_dataset
 from dataloader import get_dataloader
-from train import baseline_train
+from train import baseline_train, inference
 from model import Diffusion, CLIPTextEmbedder
 
 if(torch.backends.mps.is_available()):
@@ -53,7 +53,9 @@ def main():
 
     # Inference
     print("Inference...")
-    # dataloader = get_dataloader(dataset, batch_size, "validation")
+    prompts = ["a small liquid sculpture, corvette, viscous, reflective, digital art", "human sculpture of lanky tall alien on a romantic date at italian restaurant with smiling woman, nice restaurant, photography, bokeh"]
+    inference(config, vae, tokenizer, unet_model, prompts, dataset, device)
+
 
 
 if __name__ == "__main__":
