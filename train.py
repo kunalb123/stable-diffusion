@@ -45,7 +45,7 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, train_dataloader, devi
         # print_memory_usage("Start of Epoch")
         losses = 0
         unet_model.train()
-        
+        guidance_scale = 7.5
         for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
             # print_memory_usage(f"Before Step {step}")
             optimizer.zero_grad()
@@ -76,13 +76,21 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, train_dataloader, devi
             # Add noise to the clean images according to the noise magnitude at each timestep
             # (this is the forward diffusion process)
             images = noise_scheduler.add_noise(images, noise, timesteps).to(device=device)
+            images = torch.cat([images]*2)
+            timesteps=timesteps.repeat_interleave(2)
+        
             with autocast():
                 noise_pred = unet_model(images, texts, timesteps)
-                loss = criterion(noise_pred.sample, noise)
+
+                noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+                noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+
+                loss = criterion(noise_pred, noise)
             scaler.scale(loss).backward()
+
             # print_memory_usage(f"After Backward {step}")
             # print(torch.cuda.memory_summary(device=None, abbreviated=False))
-            nn.utils.clip_grad_norm_(unet_model.parameters(), max_norm=args["grad_clip_norm"])
+            #nn.utils.clip_grad_norm_(unet_model.parameters(), max_norm=args["grad_clip_norm"])
             scaler.step(optimizer)
             scaler.update()
             lr_scheduler.step()

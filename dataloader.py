@@ -38,7 +38,7 @@ def collate_fn(batch):
 def get_dataloader(dataset, batch_size=32, shuffle=True):
 
     transform = transforms.Compose([
-        transforms.Resize((64, 64)),
+        transforms.Resize((128, 128)),
         # transforms.ToTensor(),
         transforms.Normalize((0.5,), (0.5,))
     ])
