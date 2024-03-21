@@ -14,7 +14,7 @@ def inference(args, vae, clip_encoder, unet_model, prompts, save_path, device):
     noise_scheduler = DDPMScheduler(num_train_timesteps=args["num_timesteps"], beta_schedule='squaredcos_cap_v2')
     guidance_scale = 7.5 
 
-    unet_model = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet").to(device)
+    #unet_model = UNet2DConditionModel.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="unet").to(device)
 
     for step, prompt in progress_bar(enumerate(prompts), total=len(prompts)):
 
@@ -57,13 +57,13 @@ def main():
     device = torch.device("cuda:0")
     vae = AutoencoderKL.from_pretrained("CompVis/stable-diffusion-v1-4", subfolder="vae", torch_dtype=torch.float).to(device)
     tokenizer = CLIPTextEmbedder(device=device)
-    #unet_model = Diffusion().to(device)
-    #unet_model.load_state_dict(torch.load("model.pth"))
-    #unet_model.eval()
-
-    unet_model = UNet2DConditionModel.from_pretrained(
-    "CompVis/stable-diffusion-v1-4", subfolder="unet",use_safetensors=True).to(device)
+    unet_model = Diffusion().to(device)
+    unet_model.load_state_dict(torch.load("model.pth"))
     unet_model.eval()
+
+    #unet_model = UNet2DConditionModel.from_pretrained(
+    #"CompVis/stable-diffusion-v1-4", subfolder="unet",use_safetensors=True).to(device)
+    #unet_model.eval()
 
     prompts = ["A watercolor painting of an otter"]
     inference(config, vae, tokenizer, unet_model, prompts, '200epochmodel', device)
