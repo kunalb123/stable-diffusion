@@ -39,7 +39,7 @@ def main():
 
     print("Loading the dataset...")
     # Load the dataset with the `large_random_1k` subset
-    dataset = load_dataset('poloclub/diffusiondb', 'large_random_1k')
+    dataset = load_dataset('MatthewWaller/cifar_stable_diffusion', 'default')
     print("Dataset loaded")
 
     print("Training the model...")

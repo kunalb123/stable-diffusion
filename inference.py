@@ -30,10 +30,10 @@ def inference(args, vae, clip_encoder, unet_model, prompts, save_path, device):
             # Generate image from text embedding and latent image
             with torch.no_grad():
                 text_embeddings = clip_encoder(prompt).to(device)
-                noise_pred = unet_model(sample=latent_model_input, encoder_hidden_states=text_embeddings, timestep=t).sample
+                noise_pred = unet_model(latent_model_input,text_embeddings, t)
                 noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
                 noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
-
+                
                 latent_image = noise_scheduler.step(noise_pred, t, latent_image).prev_sample
         # Decode the generated latent image back to image space
         latent_image = 1 / 0.18215 * latent_image
@@ -65,7 +65,7 @@ def main():
     #"CompVis/stable-diffusion-v1-4", subfolder="unet",use_safetensors=True).to(device)
     #unet_model.eval()
 
-    prompts = ["A watercolor painting of an otter"]
+    prompts = ["Dog"]
     inference(config, vae, tokenizer, unet_model, prompts, '200epochmodel', device)
 
 if __name__ == "__main__":
