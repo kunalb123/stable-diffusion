@@ -6,6 +6,7 @@ from dataloader import get_dataloader
 from torch.cuda.amp import GradScaler, autocast
 import numpy as np
 from PIL import Image
+from matplotlib import pyplot as plt
 
 def print_memory_usage(description):
     allocated = torch.cuda.memory_allocated()
@@ -39,11 +40,11 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, train_dataloader, devi
     optimizer = torch.optim.Adam(unet_model.parameters(), lr=args["learning_rate"], eps=args["adam_epsilon"])
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args["num_epochs"])
     noise_scheduler = DDPMScheduler(num_train_timesteps=args["num_timesteps"], beta_schedule='squaredcos_cap_v2')
-
+    train_losses = []
     scaler = GradScaler()
     for epoch_count in range(args["num_epochs"]):
         # print_memory_usage("Start of Epoch")
-        losses = 0
+        losses = []
         unet_model.train()
         guidance_scale = 7.5
         for step, batch in progress_bar(enumerate(train_dataloader), total=len(train_dataloader)):
@@ -95,13 +96,19 @@ def baseline_train(args, vae, clip_tokenizer, unet_model, train_dataloader, devi
             scaler.update()
             lr_scheduler.step()
             # print_memory_usage(f"After Step {step}")
-            losses += loss.item()
+            losses.append(loss.item())
 
-
+        train_losses.append(np.mean(losses))
         # Commenting out running of evaluation of the 
         #run_eval(args, model, datasets, tokenizer, 'validation')
-        print('epoch', epoch_count, '| losses:', losses)
+        print('epoch', epoch_count, '| losses:', np.mean(losses))
 
+    plt.plot(train_losses, label='Training Loss')
+    plt.xlabel('Epoch')
+    plt.ylabel('Loss')
+    plt.title('Loss per Epoch')
+    plt.legend()
+    plt.savefig(f"./loss.png")
     return unet_model
 
 def inference(args, vae, clip_encoder, unet_model, prompts, save_path, device):
